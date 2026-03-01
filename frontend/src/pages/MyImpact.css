@@ -1,0 +1,197 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap');
+
+.impact-hero {
+  display: flex;
+  align-items: center;
+  gap: 32px;
+  background: linear-gradient(135deg, #1f2937 0%, #111827 100%);
+  padding: 48px;
+  border-radius: 32px;
+  color: white;
+  margin-bottom: 40px;
+  position: relative;
+  overflow: hidden;
+  font-family: 'Outfit', sans-serif;
+}
+
+.impact-hero::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  right: -10%;
+  width: 300px;
+  height: 300px;
+  background: radial-gradient(circle, rgba(168, 85, 247, 0.3) 0%, transparent 70%);
+  filter: blur(40px);
+}
+
+.impact-avatar {
+  font-size: 80px;
+  background: rgba(255, 255, 255, 0.1);
+  width: 140px;
+  height: 140px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 40px;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+  flex-shrink: 0;
+}
+
+.impact-user-label {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: rgba(255,255,255,0.5);
+  margin-bottom: 6px;
+}
+
+.impact-rank {
+  font-size: 42px;
+  font-weight: 800;
+  margin: 4px 0;
+  letter-spacing: -0.025em;
+  background: linear-gradient(135deg, #fff 0%, #a855f7 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.impact-milestone {
+  font-size: 14px;
+  color: rgba(255,255,255,0.65);
+}
+
+/* Stats */
+.impact-stats { margin-bottom: 8px; }
+
+.impact-stat-card {
+  padding: 32px !important;
+  border-radius: 28px !important;
+  text-align: center;
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.impact-stat-card:hover {
+  transform: translateY(-8px);
+}
+
+.stat-big {
+  font-size: 40px;
+  font-weight: 800;
+  margin-bottom: 4px;
+  font-family: 'Outfit', sans-serif;
+  line-height: 1;
+}
+.stat-big.green  { color: var(--trust-green); }
+.stat-big.blue   { color: var(--action-blue); }
+.stat-big.yellow { color: #C47D00; }
+
+.stat-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.stat-sublabel {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 6px;
+}
+
+/* Badges */
+.badges-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 16px;
+}
+
+.badge-card {
+  padding: 24px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s ease;
+}
+
+.badge-card.earned {
+  border-color: rgba(0, 168, 107, 0.25);
+  background: linear-gradient(135deg, #f0fdf8 0%, #ffffff 100%);
+}
+
+.badge-card.locked {
+  opacity: 0.5;
+  filter: grayscale(0.6);
+}
+
+.badge-emoji { font-size: 40px; }
+.badge-name { font-size: 14px; font-weight: 700; color: var(--text-primary); }
+.badge-desc { font-size: 12px; color: var(--text-muted); line-height: 1.4; text-align: center; }
+
+.earned-pill { font-size: 11px; padding: 3px 10px; }
+.locked-pill {
+  font-size: 11px;
+  padding: 3px 10px;
+  background: var(--bg);
+  color: var(--text-muted);
+  border-radius: 999px;
+}
+
+/* Log form & user edit */
+.user-edit-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.user-edit-input {
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: var(--radius);
+  padding: 8px 14px;
+  color: white;
+  font-size: 14px;
+  font-family: inherit;
+  outline: none;
+  flex: 1;
+}
+.user-edit-input:focus { border-color: var(--trust-green); }
+
+/* For log form inside the white card */
+.log-form-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+/* Dark inputs inside the log form card */
+.log-form-row .user-edit-input {
+  background: var(--surface);
+  border-color: var(--border);
+  color: var(--text-primary);
+  flex: 0 1 auto;
+}
+
+.error-hint {
+  margin-top: 12px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 10px 14px;
+  font-size: 12px;
+}
+
+@media (max-width: 768px) {
+  .impact-hero { flex-direction: column; text-align: center; padding: 28px; }
+  .log-form-row { flex-direction: column; align-items: stretch; }
+}
+

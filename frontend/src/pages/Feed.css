@@ -1,0 +1,102 @@
+.feed-hero {
+  background: linear-gradient(135deg, #f0fdf8 0%, #e8f4fd 100%);
+  border: 1px solid rgba(0, 168, 107, 0.15);
+  border-radius: var(--radius-xl);
+  padding: 40px;
+  margin-bottom: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 32px;
+  flex-wrap: wrap;
+}
+
+.feed-hero-text { flex: 1; min-width: 280px; }
+
+.feed-hero-title {
+  font-size: clamp(24px, 4vw, 38px);
+  color: var(--text-primary);
+  margin-bottom: 12px;
+  line-height: 1.15;
+}
+
+.hero-highlight {
+  color: var(--trust-green);
+  position: relative;
+}
+
+.feed-hero-sub {
+  font-size: 15px;
+  color: var(--text-secondary);
+  max-width: 480px;
+  line-height: 1.65;
+}
+
+/* Stats */
+.feed-stats {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.stat-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 18px 24px;
+  text-align: center;
+  min-width: 90px;
+  box-shadow: var(--shadow-sm);
+}
+
+.stat-num {
+  font-size: 32px;
+  font-weight: 800;
+  font-family: 'Space Grotesk', sans-serif;
+  line-height: 1;
+  margin-bottom: 4px;
+}
+.stat-num.green  { color: var(--trust-green); }
+.stat-num.yellow { color: #C47D00; }
+.stat-num.blue   { color: var(--action-blue); }
+
+.stat-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+/* Grid */
+.feed-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 20px;
+}
+
+/* Skeleton */
+.skeleton-card {
+  height: 260px;
+  border-radius: var(--radius-lg);
+}
+
+/* Error hint */
+.error-hint {
+  margin-top: 20px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 12px 20px;
+  display: inline-block;
+}
+.error-hint code {
+  font-family: 'Courier New', monospace;
+  font-size: 13px;
+  color: var(--trust-green);
+}
+
+@media (max-width: 768px) {
+  .feed-hero { padding: 24px; }
+  .feed-grid { grid-template-columns: 1fr; }
+}

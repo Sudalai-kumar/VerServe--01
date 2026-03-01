@@ -1,0 +1,34 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+backend/.venv/
+backend/.env
+.venv/
+
+# Node
+frontend/node_modules/
+frontend/dist/
+frontend/.env
+node_modules/
+dist/
+
+# Database
+*.db
+backend/veriserve.db
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDEs
+.vscode/
+.idea/
+
+# Temp/Cache
+*.log
+scraper_test_output.txt
+walkthrough.md
+task.md
+implementation_plan.md
+trigger_scrape.py

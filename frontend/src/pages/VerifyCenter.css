@@ -1,0 +1,114 @@
+.verify-hero {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+
+.verify-count-badge {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: var(--warning-yellow-bg);
+  border: 1.5px solid rgba(255, 184, 48, 0.3);
+  border-radius: var(--radius-lg);
+  padding: 16px 24px;
+  min-width: 100px;
+  flex-shrink: 0;
+}
+
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap');
+
+.verify-hero {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 40px;
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(168, 85, 247, 0.1) 100%);
+  padding: 40px;
+  border-radius: 32px;
+  border: 1px solid rgba(168, 85, 247, 0.2);
+  font-family: 'Outfit', sans-serif;
+}
+
+.verify-count-badge {
+  background: white;
+  padding: 24px 32px;
+  border-radius: 24px;
+  text-align: center;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
+  display: flex;
+  flex-direction: column;
+  min-width: 140px;
+  border: 1px solid #f3f4f6;
+}
+
+.verify-count {
+  font-size: 36px;
+  font-weight: 800;
+  color: #a855f7;
+  line-height: 1;
+}
+
+.verify-count-label {
+  font-size: 13px;
+  color: #6b7280;
+  font-weight: 600;
+  margin-top: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Toast */
+.verify-toast {
+  position: fixed;
+  bottom: 30px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #1f2937;
+  color: white;
+  padding: 14px 28px;
+  border-radius: 99px;
+  z-index: 1000;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2);
+  font-weight: 600;
+  animation: toastIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+@keyframes toastIn {
+  from { transform: translate(-50%, 40px); opacity: 0; }
+  to { transform: translate(-50%, 0); opacity: 1; }
+}
+
+.alert-banner.info {
+  background: white;
+  border: 1px solid #e5e7eb;
+  color: #4b5563;
+  padding: 20px 28px;
+  border-radius: 20px;
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+/* Micro-animation for cards leaving the queue */
+.anim-leave {
+  animation: fadeOutLeft 0.3s ease forwards;
+}
+
+@keyframes fadeOutLeft {
+  to { opacity: 0; transform: translateX(-20px); }
+}
+
+/* Reuse feed-grid from Feed.css */
+.feed-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 20px;
+}
+.skeleton-card { height: 260px; border-radius: var(--radius-lg); }
