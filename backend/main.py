@@ -1,62 +1,67 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from database import engine
 import models
-from routers import opportunities, ngos, impact, auth
-from routers.scraper_admin import router as scraper_router
-from scheduler import start_scheduler, stop_scheduler
+from routers import impact, auth, requests, uploads, chat
 
 # Create all tables on startup
 models.Base.metadata.create_all(bind=engine)
 
 
-# ── Lifespan — start/stop background scheduler ────────────────────────────────
+# ── Lifespan — (Formerly for scheduler) ──────────────────────────────────────
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Startup: launch scraper scheduler.  Shutdown: gracefully stop it."""
-    start_scheduler()
+    """Lifespan hook for Prototype 2: Hyper-local Help."""
     yield
-    stop_scheduler()
 
 
 app = FastAPI(
-    title="VeriServe API",
-    description="Verified Volunteering Aggregator for Chennai — powered by the Trust Engine",
-    version="1.0.0",
+    title="GoodNeighbor Prototype 2",
+    description="Hyper-local Mutual Aid — Connect and help your neighbors in Chennai.",
+    version="2.0.0",
     lifespan=lifespan,
 )
 
 # ── CORS — allow React dev server ─────────────────────────────────────────────
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://localhost:3000"],
+    allow_origins=[
+        "http://localhost:5173", 
+        "http://localhost:3000",
+        "http://127.0.0.1:5173",
+        "http://127.0.0.1:3000"
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
 # ── Routers ────────────────────────────────────────────────────────────────────
-app.include_router(opportunities.router)
-app.include_router(ngos.router)
 app.include_router(impact.router)
 app.include_router(auth.router)
-app.include_router(scraper_router)
+app.include_router(requests.router)
+app.include_router(uploads.router)
+app.include_router(chat.router)
+
+# Mount static files for uploads
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
 
 @app.get("/", tags=["root"])
 def root():
     return {
-        "app": "VeriServe Chennai",
-        "version": "1.0.0",
-        "description": "Verified Volunteering Aggregator — Trust Engine powered",
+        "app": "GoodNeighbor P2P Help",
+        "version": "2.0.0",
+        "description": "Hyper-local Help and Mutual Aid for Chennai.",
         "docs": "/docs",
     }
 
 
 @app.get("/health", tags=["root"])
 def health():
-    return {"status": "ok", "service": "VeriServe API"}
+    return {"status": "ok", "service": "GoodNeighbor API"}
 
 
 if __name__ == "__main__":

@@ -81,8 +81,7 @@ def signup(user_in: schemas.UserCreate, db: Session = Depends(get_db)):
     new_user = models.User(
         email=user_in.email,
         hashed_password=hashed_password,
-        full_name=user_in.full_name,
-        is_ngo_admin=user_in.is_ngo_admin
+        full_name=user_in.full_name
     )
     db.add(new_user)
     db.commit()

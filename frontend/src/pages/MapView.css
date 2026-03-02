@@ -83,23 +83,29 @@
   gap: 16px;
   align-items: center;
   flex-wrap: wrap;
+  padding: 8px 12px;
+  background: var(--bg);
+  border-radius: 999px;
 }
 .legend-item {
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 13px;
-  font-weight: 500;
+  font-size: 12px;
+  font-weight: 600;
   color: var(--text-secondary);
 }
 .dot {
-  width: 12px;
-  height: 12px;
+  width: 10px;
+  height: 100px; /* Resetting wait */
+  width: 10px;
+  height: 10px;
   border-radius: 50%;
   flex-shrink: 0;
 }
-.dot.green  { background: var(--trust-green); }
-.dot.yellow { background: var(--warning-yellow); }
+.dot.yellow { background: #F1C40F; }
+.dot.blue { background: #3498DB; }
+.dot.green { background: #2ECC71; }
 
 .map-count-bar {
   display: flex;

@@ -11,30 +11,58 @@ interface ImpactData {
   hours_volunteered: number
   activities_count: number
   verifications_count: number
+  karma: number
   badges: Badge[]
   rank: string
   next_milestone: string
+  category_stats: string
+}
+
+interface Activity {
+  id: number
+  type: string
+  category: string
+  hours: number
+  image_url: string | null
+  created_at: string
 }
 
 export default function MyImpact() {
   const { user, loading: authLoading } = useAuth()
   const [data, setData] = useState<ImpactData | null>(null)
+  const [history, setHistory] = useState<Activity[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(false)
 
-  // Log-hours form state
-  const [logType, setLogType] = useState<'activity' | 'verification'>('activity')
-  const [logHours, setLogHours] = useState('')
-  const [logging, setLogging] = useState(false)
-  const [logToast, setLogToast] = useState<string | null>(null)
+  const [showKarmaGuide, setShowKarmaGuide] = useState(false)
+
+  const CATEGORIES = [
+    'General', 
+    'Environment',
+    'Education',
+    'Health',
+    'Elderly Care',
+    'Disaster Relief',
+    'Food & Nutrition',
+    'Women Empowerment',
+    'Home Helper', 
+    'Grocery Run', 
+    'Pet Care', 
+    'Tech Support', 
+    'Events', 
+  ]
 
   const fetchImpact = async () => {
     if (!user) return
     setLoading(true)
     setError(false)
     try {
-      const res = await axios.get(`${API}/impact/me`)
-      setData(res.data)
+      const [impactRes, historyRes] = await Promise.all([
+        axios.get(`${API}/impact/me`),
+        axios.get(`${API}/impact/history`)
+      ])
+      setData(impactRes.data)
+      setHistory(historyRes.data)
     } catch (err) {
       console.error('Failed to fetch impact', err)
       setError(true)
@@ -51,26 +79,9 @@ export default function MyImpact() {
     }
   }, [user, authLoading])
 
-  const showToast = (msg: string) => {
-    setLogToast(msg)
-    setTimeout(() => setLogToast(null), 3000)
-  }
+  // Toast logic removed with manual logging
 
-  const handleLog = async () => {
-    if (!user) return
-    setLogging(true)
-    try {
-      const hours = logType === 'activity' ? parseFloat(logHours) || 0 : 0
-      await axios.post(`${API}/impact/log`, { type: logType, hours })
-      await fetchImpact()
-      setLogHours('')
-      showToast(logType === 'activity' ? `✅ Logged ${hours}h activity!` : '✅ Verification logged!')
-    } catch {
-      showToast('❌ Failed to log. Are you logged in?')
-    } finally {
-      setLogging(false)
-    }
-  }
+  // Manual logging removed to ensure Karma integrity (P2P Verified only)
 
   if (authLoading || loading) return (
     <div className="page-content"><div className="page-container">
@@ -107,7 +118,7 @@ export default function MyImpact() {
   return (
     <div className="page-content">
       <div className="page-container">
-        {logToast && <div className="verify-toast">{logToast}</div>}
+        {/* Toasts removed */}
 
         <div className="impact-hero">
           <div className="impact-avatar">🦁</div>
@@ -120,58 +131,128 @@ export default function MyImpact() {
           </div>
         </div>
 
-        <div className="impact-stats grid-3">
+        <div className="impact-stats grid-4">
+          <div className="impact-stat-card card karma-special" onClick={() => setShowKarmaGuide(!showKarmaGuide)} style={{ cursor: 'pointer' }}>
+            <div className="stat-big purple">{data.karma}</div>
+            <div className="stat-label">Neighbor Karma</div>
+            <div className="stat-sublabel">How it works? <span className="click-hint">Click to see</span> 🤝</div>
+          </div>
           <div className="impact-stat-card card">
             <div className="stat-big green">{data.hours_volunteered}h</div>
             <div className="stat-label">Hours Volunteered</div>
             <div className="progress-bar" style={{ marginTop: 10 }}>
               <div className="progress-fill" style={{ width: `${hoursPercent}%`, background: 'var(--trust-green)' }} />
             </div>
-            <div className="stat-sublabel">{hoursPercent.toFixed(0)}% to Community Champion</div>
           </div>
           <div className="impact-stat-card card">
             <div className="stat-big blue">{data.activities_count}</div>
-            <div className="stat-label">Activities Completed</div>
+            <div className="stat-label">Activities Done</div>
           </div>
-          <div className="impact-stat-card card">
-            <div className="stat-big yellow">{data.verifications_count}</div>
-            <div className="stat-label">Posts Verified</div>
+          {/* Verifications removed for P2P model */}
+        </div>
+
+        {showKarmaGuide && (
+          <div className="karma-guide animate-in card" style={{ marginTop: 24, padding: 32 }}>
+            <div className="guide-header">
+              <h3>🤝 How to earn Neighbor Karma?</h3>
+              <button className="btn-close" onClick={() => setShowKarmaGuide(false)}>✕</button>
+            </div>
+            <div className="guide-grid grid-2" style={{ marginTop: 20 }}>
+              <div className="guide-item">
+                <span className="guide-pts">+30</span>
+                <div className="guide-text">
+                  <strong>Provide Help</strong>
+                  <p>Earned when you are a confirmed helper on a completed task.</p>
+                </div>
+              </div>
+              <div className="guide-item" style={{ gridColumn: 'span 2', background: 'rgba(59, 130, 246, 0.05)', marginTop: 10 }}>
+                <span className="guide-pts">💡</span>
+                <div className="guide-text">
+                  <strong>Pure Giving</strong>
+                  <p>In P2P mode, Karma represents your *contribution* to Chennai. You don't earn points for receiving help or posting.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Manual Log Your Activity removed - Karma integrity hardening */}
+
+        <div style={{ marginTop: 40 }}>
+          <div className="section-header">
+            <div>
+              <h2 className="section-title">Community Expertise 🏅</h2>
+              <p className="section-subtitle">Your helpfulness breakdown by neighborhood category</p>
+            </div>
+          </div>
+          <div className="card" style={{ padding: 24 }}>
+            {Object.keys(JSON.parse(data.category_stats || '{}')).length > 0 ? (
+              <div className="expertise-grid">
+                {Object.entries(JSON.parse(data.category_stats || '{}')).map(([cat, count]) => (
+                  <div key={cat} className="expertise-item">
+                    <div className="expertise-info">
+                      <span className="expertise-name">{cat}</span>
+                      <span className="expertise-count">{count as number} { (count as number) === 1 ? 'Task' : 'Tasks' }</span>
+                    </div>
+                    <div className="progress-bar">
+                      <div 
+                        className="progress-fill" 
+                        style={{ 
+                          width: `${Math.min(((count as number) / 10) * 100, 100)}%`, 
+                          background: 'linear-gradient(90deg, var(--action-blue) 0%, var(--trust-green) 100%)' 
+                        }} 
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="empty-state" style={{ padding: '20px 0' }}>
+                <p>Complete your first neighbhorly task to unlock expertise stats!</p>
+              </div>
+            )}
           </div>
         </div>
 
-        <div className="card" style={{ marginTop: 32, padding: '24px 28px' }}>
-          <h2 className="section-title" style={{ marginBottom: 16 }}>Log Your Activity</h2>
-          <div className="log-form-row">
-            <div className="filter-tabs">
-              <button
-                className={`filter-tab${logType === 'activity' ? ' active' : ''}`}
-                onClick={() => setLogType('activity')}
-              >🕒 Activity</button>
-              <button
-                className={`filter-tab${logType === 'verification' ? ' active' : ''}`}
-                onClick={() => setLogType('verification')}
-              >✅ Verification</button>
+        <div style={{ marginTop: 40 }}>
+          <div className="section-header">
+            <div>
+              <h2 className="section-title">Activity History 📜</h2>
+              <p className="section-subtitle">Your log of community contributions</p>
             </div>
-            {logType === 'activity' && (
-              <input
-                className="user-edit-input"
-                type="number"
-                min="0"
-                step="0.5"
-                placeholder="Hours"
-                value={logHours}
-                onChange={e => setLogHours(e.target.value)}
-                style={{ width: 160 }}
-              />
-            )}
-            <button
-              className="btn btn-primary"
-              onClick={handleLog}
-              disabled={logging || (logType === 'activity' && !logHours)}
-            >
-              {logging ? 'Logging…' : '+ Log'}
-            </button>
           </div>
+          {history.length > 0 ? (
+            <div className="history-feed">
+              {history.map(activity => (
+                <div key={activity.id} className="history-item card anim-fade-up">
+                  <div className="history-content">
+                    <div className="history-main">
+                      <div className="history-type-icon">{activity.type === 'activity' ? '🕒' : '✅'}</div>
+                      <div>
+                        <div className="history-title">
+                          {activity.type === 'activity' ? `Completed ${activity.hours}h task` : 'Verified a community post'}
+                        </div>
+                        <div className="history-meta">
+                          <span className="pill pill-blue">{activity.category}</span>
+                          <span className="history-date">{new Date(activity.created_at).toLocaleDateString()}</span>
+                        </div>
+                      </div>
+                    </div>
+                    {activity.image_url && (
+                      <div className="history-proof" onClick={() => window.open(`${API}${activity.image_url}`, '_blank')}>
+                         <img src={`${API}${activity.image_url}`} alt="Proof" />
+                         <div className="proof-overlay">🔍 View Proof</div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="card" style={{ padding: 40, textAlign: 'center', color: 'var(--text-muted)' }}>
+              <p>No activity history found. Start helping today!</p>
+            </div>
+          )}
         </div>
 
         <div style={{ marginTop: 40 }}>

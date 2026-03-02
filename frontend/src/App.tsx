@@ -3,9 +3,9 @@ import Navbar from './components/Navbar'
 import Feed from './pages/Feed'
 import MapView from './pages/MapView'
 import MyImpact from './pages/MyImpact'
-import VerifyCenter from './pages/VerifyCenter'
-import NGODirectory from './pages/NGODirectory'
 import AuthPage from './pages/AuthPage'
+import Leaderboard from './pages/Leaderboard'
+import Profile from './pages/Profile'
 import './index.css'
 
 function App() {
@@ -18,8 +18,8 @@ function App() {
           <Route path="/feed"          element={<Feed />} />
           <Route path="/map"           element={<MapView />} />
           <Route path="/impact"        element={<MyImpact />} />
-          <Route path="/verify"        element={<VerifyCenter />} />
-          <Route path="/ngo-directory" element={<NGODirectory />} />
+          <Route path="/profile/:id"   element={<Profile />} />
+          <Route path="/leaderboard"   element={<Leaderboard />} />
           <Route path="/login"         element={<AuthPage />} />
         </Routes>
       </main>

@@ -5,7 +5,6 @@ interface User {
   id: number
   email: string
   full_name: string
-  is_ngo_admin: boolean
 }
 
 interface AuthContextType {

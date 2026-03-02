@@ -1,46 +1,81 @@
 import { useState, useEffect, useMemo } from 'react'
 import axios from 'axios'
-import OpportunityCard, { Opportunity } from '../components/OpportunityCard'
+import HelpRequestCard from '../components/HelpRequestCard'
+import PostRequestModal from '../components/PostRequestModal'
 import './Feed.css'
 
 const API = import.meta.env.VITE_API_URL ?? 'http://localhost:8000'
 
-const FILTERS = [
-  { key: 'all',          label: 'All',           emoji: '🌐' },
-  { key: 'verified',     label: 'Verified ✅',   emoji: '' },
-  { key: 'needs_review', label: 'Needs Review 🔍',emoji: '' },
+export interface HelpRequest {
+  id: number
+  user_id: number
+  owner_name: string
+  owner_karma: number
+  title: string
+  description: string
+  image_url?: string
+  location_name: string
+  lat: number
+  lng: number
+  people_needed: number
+  helper_count: number
+  category: string
+  status: string
+  created_at: string
+  is_joined: boolean
+  trust_score: number
+  trust_reasoning?: string
+  join_status?: string
+}
+
+const CATEGORIES = [
+  'General', 
+  'Home Helper', 
+  'Elderly Care', 
+  'Grocery Run', 
+  'Pet Care', 
+  'Gardening', 
+  'Tech Support', 
+  'Unloading', 
+  'Events', 
+  'Other'
 ]
 
 export default function Feed() {
-  const [opps, setOpps] = useState<Opportunity[]>([])
-  const [filter, setFilter] = useState('all')
+  const [requests, setRequests] = useState<HelpRequest[]>([])
+  const [category, setCategory] = useState('All')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(false)
+  const [showModal, setShowModal] = useState(false)
 
-  // Fetch ALL once on mount
-  useEffect(() => {
+  const fetchRequests = () => {
+    const token = localStorage.getItem('token')
+    if (!token) {
+      setLoading(false)
+      return
+    }
+
     setLoading(true)
     setError(false)
-    axios.get(`${API}/opportunities/`)
-      .then(r => setOpps(r.data))
-      .catch(() => setError(true))
+    axios.get(`${API}/requests/`, {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+      .then(r => setRequests(r.data))
+      .catch((err) => {
+        console.error('Feed fetch error:', err)
+        setError(true)
+      })
       .finally(() => setLoading(false))
+  }
+
+  useEffect(() => {
+    fetchRequests()
   }, [])
 
-  // Memoize filtered list
-  const filteredOpps = useMemo(() => {
-    if (filter === 'all') return opps
-    return opps.filter(o => o.status === filter)
-  }, [opps, filter])
-
-  // Memoize stats
-  const stats = useMemo(() => {
-    return {
-      verified: opps.filter(o => o.status === 'verified').length,
-      review:   opps.filter(o => o.status === 'needs_review').length,
-      total:    opps.length
-    }
-  }, [opps])
+  const filteredRequests = useMemo(() => {
+    if (category === 'All') return requests
+    return requests.filter(r => r.category === category)
+  }, [requests, category])
 
   return (
     <div className="page-content">
@@ -49,26 +84,24 @@ export default function Feed() {
         <div className="feed-hero">
           <div className="feed-hero-text">
             <h1 className="feed-hero-title">
-              Chennai's <span className="hero-highlight">Verified</span> Volunteer Feed
+              Hyper-local <span className="hero-highlight">Mutual Aid</span> Chennai
             </h1>
             <p className="feed-hero-sub">
-              Real-time volunteering opportunities, filtered through the Trust Engine.
-              Only safe, verified opportunities reach this feed.
+              Need a hand? Post a request. Want to help? Browse the map and feed for neighbors nearby.
             </p>
+            <button className="post-btn-hero" onClick={() => setShowModal(true)}>
+              Post Help Request 🤝
+            </button>
           </div>
-          {/* Stats row */}
-          <div className="feed-stats">
+          {/* Stats Simplified */}
+          <div className="feed-stats-p2p">
             <div className="stat-card">
-              <div className="stat-num green">{stats.verified}</div>
-              <div className="stat-label">Verified</div>
+              <div className="stat-num blue">{requests.length}</div>
+              <div className="stat-label">Active Requests</div>
             </div>
             <div className="stat-card">
-              <div className="stat-num yellow">{stats.review}</div>
-              <div className="stat-label">Needs Review</div>
-            </div>
-            <div className="stat-card">
-              <div className="stat-num blue">{stats.total}</div>
-              <div className="stat-label">Total Active</div>
+              <div className="stat-num green">{requests.filter(r => r.helper_count > 0).length}</div>
+              <div className="stat-label">Requests Helped</div>
             </div>
           </div>
         </div>
@@ -76,17 +109,17 @@ export default function Feed() {
         {/* Filter Tabs */}
         <div className="section-header">
           <div>
-            <h2 className="section-title">Opportunities</h2>
-            <p className="section-subtitle">Updated live via the VeriServe Trust Engine</p>
+            <h2 className="section-title">Nearby Help Requests</h2>
+            <p className="section-subtitle">Real-time neighbor-to-neighbor requests</p>
           </div>
           <div className="filter-tabs">
-            {FILTERS.map(f => (
+            {['All', ...CATEGORIES].map(c => (
               <button
-                key={f.key}
-                className={`filter-tab${filter === f.key ? (f.key === 'verified' ? ' active-green' : ' active') : ''}`}
-                onClick={() => setFilter(f.key)}
+                key={c}
+                className={`filter-tab${category === c ? ' active' : ''}`}
+                onClick={() => setCategory(c)}
               >
-                {f.label}
+                {c}
               </button>
             ))}
           </div>
@@ -101,31 +134,39 @@ export default function Feed() {
           </div>
         ) : error ? (
           <div className="empty-state">
-            <div className="empty-state-icon">⚠️</div>
-            <h3>Backend not connected</h3>
-            <p>Start the FastAPI server at port 8000 to load live data.</p>
-            <div className="error-hint">
-              <code>cd backend && uvicorn main:app --reload</code>
-            </div>
+            <div className="empty-state-icon">🔒</div>
+            <h3>Authentication Required</h3>
+            <p>Please login to view and post help requests.</p>
           </div>
-        ) : filteredOpps.length === 0 ? (
+        ) : filteredRequests.length === 0 ? (
           <div className="empty-state">
-            <div className="empty-state-icon">🔍</div>
-            <h3>No opportunities found</h3>
-            <p>Try switching the filter or run the seeder to populate data.</p>
+            <div className="empty-state-icon">🏘️</div>
+            <h3>No requests in your area</h3>
+            <p>Be the first to ask for help or check back later.</p>
           </div>
         ) : (
           <div className="feed-grid">
-            {filteredOpps.map((opp, i) => (
-              <OpportunityCard
-                key={opp.id}
-                opp={opp}
+            {filteredRequests.map((req, i) => (
+              <HelpRequestCard
+                key={req.id}
+                req={req}
+                onUpdate={fetchRequests}
                 style={{ animationDelay: `${i * 60}ms` }}
               />
             ))}
           </div>
         )}
       </div>
+
+      {showModal && (
+        <PostRequestModal 
+          onClose={() => setShowModal(false)} 
+          onSuccess={() => {
+            setShowModal(false);
+            fetchRequests();
+          }}
+        />
+      )}
     </div>
   )
 }

@@ -11,7 +11,7 @@ export default function AuthPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [fullName, setFullName] = useState('')
-  const [isNgoAdmin, setIsNgoAdmin] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   
@@ -37,7 +37,6 @@ export default function AuthPage() {
           email,
           password,
           full_name: fullName,
-          is_ngo_admin: isNgoAdmin,
         })
         setIsLogin(true)
         setError('Account created! Please login.')
@@ -53,34 +52,23 @@ export default function AuthPage() {
     <div className="auth-container">
       <div className="auth-card">
         <div className="auth-header">
-          <div className="auth-logo">🦁</div>
-          <h1>{isLogin ? 'Welcome Back' : 'Join VeriServe'}</h1>
-          <p>{isLogin ? 'Login to access Chennai\'s verified feed' : 'Protect your city, track your impact'}</p>
+          <div className="auth-logo">🏠</div>
+          <h1>{isLogin ? 'Welcome Back' : 'Join GoodNeighbor'}</h1>
+          <p>{isLogin ? 'Login to access Chennai\'s neighborly help feed' : 'Help your street, grow your Karma'}</p>
         </div>
 
         <form className="auth-form" onSubmit={handleSubmit}>
           {!isLogin && (
-            <>
-              <div className="form-group">
-                <label>Full Name</label>
-                <input 
-                  type="text" 
-                  placeholder="John Doe" 
-                  value={fullName}
-                  onChange={e => setFullName(e.target.value)}
-                  required
-                />
-              </div>
-              <div className="form-group-row">
-                <input 
-                  type="checkbox" 
-                  id="ngo-admin"
-                  checked={isNgoAdmin}
-                  onChange={e => setIsNgoAdmin(e.target.checked)}
-                />
-                <label htmlFor="ngo-admin">I am an NGO Representative</label>
-              </div>
-            </>
+            <div className="form-group">
+              <label>Full Name</label>
+              <input 
+                type="text" 
+                placeholder="John Doe" 
+                value={fullName}
+                onChange={e => setFullName(e.target.value)}
+                required
+              />
+            </div>
           )}
           
           <div className="form-group">
@@ -96,13 +84,23 @@ export default function AuthPage() {
 
           <div className="form-group">
             <label>Password</label>
-            <input 
-              type="password" 
-              placeholder="••••••••" 
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              required
-            />
+            <div className="password-input-wrapper">
+              <input 
+                type={showPassword ? "text" : "password"} 
+                placeholder="••••••••" 
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                required
+              />
+              <button 
+                type="button" 
+                className="password-toggle-btn"
+                onClick={() => setShowPassword(!showPassword)}
+                aria-label={showPassword ? "Hide password" : "Show password"}
+              >
+                {showPassword ? '👁️' : '👁️‍🗨️'}
+              </button>
+            </div>
           </div>
 
           {error && <div className="auth-error">{error}</div>}

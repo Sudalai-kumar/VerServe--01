@@ -7,7 +7,7 @@ const NAV_LINKS = [
   { path: '/',         label: 'Feed',    icon: '📱' },
   { path: '/map',      label: 'Map',     icon: '🗺️' },
   { path: '/impact',   label: 'Impact',  icon: '📊' },
-  { path: '/verify',   label: 'Verify',  icon: '🛡️' },
+  { path: '/leaderboard', label: 'Leaderboard', icon: '🏆' },
 ]
 
 export default function Navbar() {
@@ -22,7 +22,7 @@ export default function Navbar() {
       <div className="page-container navbar-inner">
         <Link to="/" className="navbar-logo" onClick={closeMobileMenu}>
           <div className="logo-icon">🦁</div>
-          <span className="logo-text">VeriServe <span className="logo-accent">Chennai</span></span>
+          <span className="logo-text">GoodNeighbor <span className="logo-accent">Chennai</span></span>
           <span className="logo-tag">Beta</span>
         </Link>
 
@@ -45,7 +45,6 @@ export default function Navbar() {
             <div className="user-profile">
               <div className="user-info">
                 <span className="user-name">{user.full_name || user.email.split('@')[0]}</span>
-                <span className="user-role">{user.is_ngo_admin ? 'NGO Admin' : 'Volunteer'}</span>
               </div>
               <button onClick={logout} className="logout-btn" title="Logout">
                 🚪

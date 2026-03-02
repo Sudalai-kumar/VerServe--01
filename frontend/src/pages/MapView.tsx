@@ -3,9 +3,23 @@ import axios from 'axios'
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
-import TrustBadge from '../components/TrustBadge'
-import { Opportunity } from '../components/OpportunityCard'
+import { HelpRequest } from './Feed'
 import './MapView.css'
+import '../components/HelpRequestCard.css' // Reuse trust styles
+import { useMemo } from 'react'
+
+const CATEGORIES = [
+  'General', 
+  'Home Helper', 
+  'Elderly Care', 
+  'Grocery Run', 
+  'Pet Care', 
+  'Gardening', 
+  'Tech Support', 
+  'Unloading', 
+  'Events', 
+  'Other'
+]
 
 // Fix leaflet default icon path issues with Vite
 delete (L.Icon.Default.prototype as any)._getIconUrl
@@ -28,39 +42,98 @@ const createIcon = (color: string) =>
     popupAnchor: [0, -36],
   })
 
-const greenIcon  = createIcon('#00A86B')
-const yellowIcon = createIcon('#FFB830')
+interface MapPinData {
+  id: number
+  title: string
+  description: string
+  location: string
+  lat: number
+  lng: number
+  trust_score: number
+  status: string
+  trust_reasoning?: string
+  category: string
+  image_url?: string
+  helper_count?: number
+  people_needed?: number
+}
+
+const yellowIcon = createIcon('#F1C40F') // Seeking Help
+const blueIcon   = createIcon('#3498DB') // Help Found
+const greenIcon  = createIcon('#2ECC71') // Completed task
+const redIcon    = createIcon('#E74C3C') // Flagged (Not shown but for completeness)
 
 export default function MapView() {
-  const [pins, setPins] = useState<Opportunity[]>([])
-  const [selected, setSelected] = useState<Opportunity | null>(null)
+  const [pins, setPins] = useState<MapPinData[]>([])
+  const [category, setCategory] = useState('All')
+  const [selected, setSelected] = useState<MapPinData | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    axios.get(`${API}/opportunities/map-pins`)
-      .then(r => setPins(r.data))
-      .catch(() => {})
-      .finally(() => setLoading(false))
+    const fetchAll = async () => {
+      setLoading(true)
+      try {
+        const headers = { Authorization: `Bearer ${localStorage.getItem('token')}` }
+        const res = await axios.get(`${API}/requests/`, { headers })
+        const formatted: MapPinData[] = res.data.map((p: any) => ({
+          ...p,
+          location: p.location_name
+        }))
+
+        setPins(formatted)
+      } catch (err) {
+        console.error("Failed to fetch map data", err)
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchAll()
   }, [])
+
+  const getIcon = (pin: MapPinData) => {
+    if (pin.status === 'seeking') return yellowIcon
+    if (pin.status === 'help_found') return blueIcon
+    if (pin.status === 'completed') return greenIcon
+    return greenIcon
+  }
+
+  const filteredPins = useMemo(() => {
+    let result = pins
+    if (category !== 'All') {
+      result = result.filter(p => p.category === category)
+    }
+    return result
+  }, [pins, category])
 
   return (
     <div className="map-page page-content">
       <div className="page-container">
         <div className="section-header">
           <div>
-            <h1 className="section-title">Chennai Volunteer Map 🗺️</h1>
+            <h1 className="section-title">Mutual Aid Map 🗺️</h1>
             <p className="section-subtitle">
-              Colour-coded pins: 🟢 Verified · 🟡 Needs Review
+              Neighbor helping neighbor. Find someone nearby who needs a hand.
             </p>
           </div>
+          <div className="filter-tabs">
+            {['All', ...CATEGORIES].map(c => (
+              <button
+                key={c}
+                className={`filter-tab${category === c ? ' active' : ''}`}
+                onClick={() => setCategory(c)}
+              >
+                {c}
+              </button>
+            ))}
+          </div>
           <div className="map-legend">
-            <span className="legend-item"><span className="dot green" />Verified</span>
-            <span className="legend-item"><span className="dot yellow" />Needs Review</span>
+            <span className="legend-item"><span className="dot yellow" />Seeking Help</span>
+            <span className="legend-item"><span className="dot blue" />Helping</span>
+            <span className="legend-item"><span className="dot green" />Completed</span>
           </div>
         </div>
 
         <div className="map-layout">
-          {/* Map */}
           <div className="map-wrapper card">
             {loading ? (
               <div className="map-loading skeleton" />
@@ -75,28 +148,45 @@ export default function MapView() {
                   url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                   attribution='&copy; <a href="https://openstreetmap.org">OpenStreetMap</a>'
                 />
-                {pins.map(pin => (
-                  <Marker
-                    key={pin.id}
-                    position={[pin.lat ?? 13.0827, pin.lng ?? 80.2707]}
-                    icon={pin.status === 'verified' ? greenIcon : yellowIcon}
-                    eventHandlers={{ click: () => setSelected(pin) }}
-                  >
-                    <Popup className="map-popup-container">
-                      <div className="map-popup">
-                        <p className="popup-ngo">{pin.ngo_name}</p>
-                        <h4 className="popup-title">{pin.title}</h4>
-                        <TrustBadge score={pin.trust_score} status={pin.status} size="sm" />
-                        <p className="popup-location">📍 {pin.location}</p>
-                      </div>
-                    </Popup>
-                  </Marker>
-                ))}
+                {filteredPins.map(pin => {
+                  const jitterLat = (pin.lat ?? 13.0827) + (Math.random() - 0.5) * 0.001;
+                  const jitterLng = (pin.lng ?? 80.2707) + (Math.random() - 0.5) * 0.001;
+                  
+                  return (
+                    <Marker
+                      key={`p2p-${pin.id}`}
+                      position={[jitterLat, jitterLng]}
+                      icon={getIcon(pin)}
+                      eventHandlers={{ click: () => setSelected(pin) }}
+                    >
+                      <Popup className="map-popup-container">
+                        <div className="map-popup">
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <p className="popup-ngo">🤝 {pin.category}</p>
+                            <span className="pill pill-yellow" style={{ fontSize: '10px', padding: '1px 6px' }}>
+                              P2P
+                            </span>
+                          </div>
+                          <h4 className="popup-title">{pin.title}</h4>
+                          <p className="popup-location">📍 {pin.location}</p>
+                          <div className="trust-meter-p2p mini" style={{ margin: '4px 0' }}>
+                             <span className="trust-score-p2p" style={{ 
+                               color: pin.trust_score >= 80 ? 'var(--trust-green)' : pin.trust_score >= 50 ? 'var(--action-blue)' : '#e11d48',
+                               fontSize: '0.75rem',
+                               margin: 0
+                             }}>
+                               🛡️ {pin.trust_score}% Legit
+                             </span>
+                          </div>
+                        </div>
+                      </Popup>
+                    </Marker>
+                  );
+                })}
               </MapContainer>
             )}
           </div>
 
-          {/* Selected pin detail sidebar */}
           {selected && (
             <div className="map-sidebar card anim-fade-up">
               <button
@@ -104,50 +194,67 @@ export default function MapView() {
                 onClick={() => setSelected(null)}
                 aria-label="Close"
               >✕</button>
-              <TrustBadge score={selected.trust_score} status={selected.status} size="sm" />
-              <p className="popup-ngo" style={{ marginTop: 12 }}>{selected.ngo_name}</p>
-              <h3 className="popup-title" style={{ fontSize: '1.1rem', margin: '6px 0 10px' }}>{selected.title}</h3>
-              <p style={{ fontSize: '0.88rem', color: 'var(--text-muted)', lineHeight: 1.6 }}>
+              
+              <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+                <span className="pill pill-yellow">NEIGHBOR HELP</span>
+                <span className={`pill ${selected.status === 'completed' ? 'pill-green' : 'pill-yellow'}`}>
+                  {selected.status.replace('_', ' ').toUpperCase()}
+                </span>
+              </div>
+              
+              {selected.image_url && (
+                <div className="map-sidebar-image" style={{ margin: '0 0 16px', height: 160, overflow: 'hidden', borderRadius: 12, border: '1px solid var(--border)' }}>
+                  <img src={selected.image_url.startsWith('http') ? selected.image_url : `${API}${selected.image_url}`} alt={selected.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                </div>
+              )}
+
+              <p className="popup-ngo" style={{ color: 'var(--action-blue)' }}>Mutual Aid Request</p>
+              <h3 className="popup-title" style={{ fontSize: '1.25rem', margin: '4px 0 12px', lineHeight: 1.2 }}>{selected.title}</h3>
+              
+              <div className="trust-meter-p2p" style={{ marginBottom: 20 }}>
+                 <div className="trust-score-p2p" style={{ 
+                   color: selected.trust_score >= 80 ? 'var(--trust-green)' : selected.trust_score >= 50 ? 'var(--action-blue)' : '#e11d48'
+                 }}>
+                   <span className="trust-icon">{selected.trust_score >= 80 ? '🛡️' : selected.trust_score >= 50 ? '🔍' : '⚠️'}</span>
+                   <strong>{selected.trust_score}% Legitimacy Score</strong>
+                 </div>
+                 {selected.trust_reasoning && <p className="trust-reasoning-p2p">{selected.trust_reasoning}</p>}
+              </div>
+
+              <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', lineHeight: 1.6, marginBottom: 20 }}>
                 {selected.description}
               </p>
-              <div className="opp-info-row" style={{ marginTop: 14 }}>
+              
+              <div className="opp-info-row" style={{ marginTop: 14, background: 'var(--bg)', padding: '10px 14px', borderRadius: 8 }}>
                 <span className="opp-info-item">📍 {selected.location}</span>
-                <span className="opp-info-item pill pill-blue">{selected.category}</span>
+                {selected.helper_count !== undefined && (
+                  <span className="opp-info-item">🤝 {selected.helper_count} / {selected.people_needed} Helpers</span>
+                )}
               </div>
-              {selected.contact && (
-                <a href={`tel:${selected.contact}`} className="btn btn-ghost" style={{ marginTop: 14, width: '100%', justifyContent: 'center' }}>
-                  📞 Call NGO
-                </a>
-              )}
-              {selected.source_url ? (
-                <a
-                  href={selected.source_url}
+              
+              <div className="map-sidebar-actions" style={{ marginTop: 24, display: 'flex', flexDirection: 'column', gap: 10 }}>
+                <a 
+                  href={`https://www.google.com/maps/dir/?api=1&destination=${selected.lat},${selected.lng}`}
                   target="_blank"
-                  rel="noreferrer"
                   className="btn btn-primary"
-                  style={{ marginTop: 10, width: '100%', justifyContent: 'center' }}
+                  style={{ width: '100%', justifyContent: 'center', padding: '12px' }}
                 >
-                  🙋 Volunteer Now
+                  📍 Navigate to Task
                 </a>
-              ) : (
-                <button
-                  className="btn btn-primary"
-                  style={{ marginTop: 10, width: '100%', justifyContent: 'center' }}
+                <button 
+                   className="btn btn-ghost"
+                   style={{ width: '100%', justifyContent: 'center', padding: '12px' }}
+                   onClick={() => window.location.href = '/feed'}
                 >
-                  🙋 Volunteer Now
+                   View Details in Feed
                 </button>
-              )}
+              </div>
             </div>
           )}
         </div>
 
         <div className="map-count-bar">
-          <span>📌 Showing {pins.length} active opportunities across Chennai</span>
-          {selected && (
-            <span style={{ color: 'var(--trust-green)' }}>
-              · Viewing: <strong>{selected.title}</strong>
-            </span>
-          )}
+          <span>🏘️ Found {filteredPins.length} requests matching your interest in Chennai</span>
         </div>
       </div>
     </div>

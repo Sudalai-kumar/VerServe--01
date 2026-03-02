@@ -1,10 +1,10 @@
 """
-VeriServe Scam Detector — Hybrid Trust Engine (v2.0)
+GoodNeighbor Scam Detector — Hybrid Trust Engine (v2.0)
 ======================================================
 Architecture: Two-stage scoring pipeline
 
   Stage 1 — Rule Engine (instant, zero quota cost)
-    Fast heuristic scoring using keyword patterns, NGO name lists,
+    Fast heuristic scoring using keyword patterns, trusted entity lists,
     and source metadata. Same logic as v1.0.
 
   Stage 2 — LLM Arbitration (Gemini 2.0 Flash, only when needed)
@@ -29,7 +29,7 @@ from typing import Tuple, List
 import google.generativeai as genai
 from groq import Groq
 from dotenv import load_dotenv
-from scraper.llm_rate_limiter import llm_wait
+from .llm_rate_limiter import llm_wait
 
 load_dotenv()
 
@@ -56,11 +56,21 @@ UNVERIFIED_LINK_PATTERNS = [
 ]
 
 SUSPICIOUS_PHRASES = [
-    r"\bguaranteed\s+reward\b", r"\bwork\s+from\s+home\b",
-    r"\bearn\s+money\b", r"\bmake\s+money\b",
-    r"\bno\s+experience\s+needed\b", r"\bget\s+paid\b",
-    r"\bwinners?\s+selected\b", r"\bprize\s+money\b",
     r"\bfree\s+gift\b", r"\bclaim\s+your\b",
+]
+ 
+DATA_THEFT_PATTERNS = [
+    r"\badhar\b", r"\baadhar\b", r"\botp\b", r"\bpassword\b",
+    r"\bcvv\b", r"\bpan\s+card\b", r"\bid\s+proof\b",
+    r"\bshare\s+login\b", r"\blogin\s+details\b",
+    r"\b\d{12}\b", # Potentially an Aadhar number
+    r"\b\d{6}\b",  # Potentially an OTP
+]
+
+INAPPROPRIATE_REQUEST_PATTERNS = [
+    r"\bmassage\b", r"\bspa\b", r"\bdating\b", r"\bhookup\b", 
+    r"\bromance\b", r"\bmeet\s+girls\b", r"\bmeet\s+boys\b",
+    r"\bpersonal\s+service\b", r"\bbody\s+work\b", r"\berotic\b",
 ]
 
 # ── Trust Boosters ────────────────────────────────────────────────────────────
@@ -94,6 +104,7 @@ def _rule_score(
     ngo_name: str,
     source: str,
     source_url: str,
+    user_karma: int = 0
 ) -> Tuple[int, List[str]]:
     """
     Fast heuristic scoring. Returns (raw_score, flags).
@@ -107,8 +118,10 @@ def _rule_score(
         score += 15
     elif source == "social":
         score -= 5
+    elif source == "p2p":
+        score += 5  # Mutual aid baseline
 
-    # Trusted NGO name
+    # Trusted entity name
     ngo_lower = ngo_name.lower()
     for trusted in TRUSTED_NGOS:
         if trusted in ngo_lower:
@@ -122,13 +135,43 @@ def _rule_score(
 
     # Positive keywords
     positive_hits = sum(1 for kw in POSITIVE_KEYWORDS if kw in text)
-    score += min(positive_hits * 2, 10)
+    score += min(positive_hits * 3, 15)
+
+    # P2P Specific: Image verification boost
+    if source == "p2p" and source_url:  # Using source_url as image_url for P2P context in detect_scam
+        score += 15
+        flags.append("📸 Image provided (Verified Evidence)")
+    
+    # P2P Specific: Description depth
+    if source == "p2p" and len(description) > 100:
+        score += 5
+
+    # P2P Specific: Karma Boost
+    if source == "p2p" and user_karma > 0:
+        karma_bonus = min(20, user_karma // 10)
+        score += karma_bonus
+        if karma_bonus >= 10:
+            flags.append(f"🤝 Trusted Neighbor (Karma: {user_karma})")
 
     # RED FLAG: Money requests
     for pattern in MONEY_REQUEST_PATTERNS:
         if re.search(pattern, text, re.IGNORECASE):
             flags.append("💸 Money/payment request detected")
             score -= 30
+            break
+
+    # RED FLAG: Inappropriate personal services
+    for pattern in INAPPROPRIATE_REQUEST_PATTERNS:
+        if re.search(pattern, text, re.IGNORECASE):
+            flags.append("❌ Inappropriate/Personal service request")
+            score -= 50  # Heavy penalty
+            break
+ 
+    # RED FLAG: Data Theft / Privacy risk
+    for pattern in DATA_THEFT_PATTERNS:
+        if re.search(pattern, text, re.IGNORECASE):
+            flags.append("🛡️ Potential Data Theft / privacy risk")
+            score -= 60  # Extreme penalty
             break
 
     # RED FLAG: Extreme urgency
@@ -169,6 +212,7 @@ def _llm_arbitrate(
     source_url: str,
     rule_score: int,
     rule_flags: List[str],
+    user_karma: int = 0
 ) -> Tuple[int, str, str]:
     """
     Ask Groq (fallback to Gemini) to review an opportunity.
@@ -180,23 +224,33 @@ def _llm_arbitrate(
         return 0, "", "LLM skipped: no API keys"
 
     rule_flags_text = "\n".join(rule_flags) if rule_flags else "None"
-    prompt = f"""You are VeriServe's AI Trust Analyst for Chennai volunteering opportunities.
+    prompt = f"""You are GoodNeighbor's AI Trust Analyst for Chennai community aid.
 
-Your job: Decide if this post is a genuine volunteer opportunity or a scam/misleading listing.
+Your job: Decide if this post is a genuine neighborly help request or a scam listing.
 
 INPUT:
   Title       : {title}
   Description : {description}
-  NGO Name    : {ngo_name}
+  Requester   : {ngo_name}
   Source URL  : {source_url or "not provided"}
-  Rule Score  : {rule_score}/100 (from heuristic engine)
+  Rule Score  : {rule_score}/100
   Rule Flags  : {rule_flags_text}
+  User Karma  : {user_karma} (High karma = reputable neighbor)
 
 EVALUATION CRITERIA:
-  - Is this a real, specific volunteering activity (not just contact info or an internship application)?
-  - Does the NGO seem legitimate (known name, proper description, no payment demands)?
-  - Are there subtle manipulation tactics the rules may have missed?
-  - Is the description coherent and contextually appropriate for a volunteering post?
+  - Is this a real, specific need (not just generic info or a phishing attempt)?
+  - CONTEXT: This is a Neighbor-to-Neighbor request.
+  - Does the requester seem reliable based on their {user_karma} Karma?
+ 
+ZERO TOLERANCE (Reject immediately if any apply):
+  - PERSONAL SERVICES: Massages, spa, dating, hookups, or romantic solicitations.
+  - DATA THEFT: Asking for Aadhar, OTP, Passwords, Bank Logins, or IDs.
+  - FINANCIAL SCAMS: Asking for UPI, bank transfer, "deposits", or "gas money".
+  - ILLEGAL/SUSPICIOUS: Delivering unidentified "sealed packages" or illegal items.
+  - FAKE JOBS: MLM, "Work from home", or "Register for reward" schemes.
+ 
+SCORING:
+  - If any ZERO TOLERANCE category is matched, the verdict MUST be "flagged" and score_adjustment MUST be -30.
 
 RESPOND with a JSON object (no markdown, raw JSON only):
 {{
@@ -253,20 +307,21 @@ def detect_scam(
     ngo_name: str,
     source: str = "manual",
     source_url: str = "",
+    user_karma: int = 0,
 ) -> Tuple[int, str, list, str]:
     """
     Hybrid trust scoring pipeline.
     Returns: (trust_score, status, flags, reasoning)
     """
     # Stage 1: Rule engine (always runs)
-    rule_score, flags = _rule_score(title, description, ngo_name, source, source_url)
+    rule_score, flags = _rule_score(title, description, ngo_name, source, source_url, user_karma)
 
     llm_reasoning = ""
 
     # Stage 2: LLM arbitration (only for ambiguous middle zone)
     if 45 <= rule_score <= 89:
         adj, llm_verdict, llm_reasoning = _llm_arbitrate(
-            title, description, ngo_name, source_url, rule_score, flags
+            title, description, ngo_name, source_url, rule_score, flags, user_karma
         )
 
         final_score = max(0, min(100, rule_score + adj))
@@ -312,6 +367,18 @@ if __name__ == "__main__":
             "source": "social",
         },
         {
+            "title": "Need massages",
+            "description": "I need full body massages at home. Willing to pay. Immediate help needed.",
+            "ngo_name": "Neighbor",
+            "source": "p2p",
+        },
+        {
+            "title": "KYC Verification help",
+            "description": "I need help with KYC. Please share your Aadhar number and OTP to verify your account.",
+            "ngo_name": "Neighbor",
+            "source": "p2p",
+        },
+        {
             "title": "Teaching children in Vyasarpadi",
             "description": "Volunteer to teach English to underprivileged children every Saturday morning.",
             "ngo_name": "Chennai Volunteers",
@@ -344,7 +411,8 @@ if __name__ == "__main__":
     for tc in test_cases:
         score, status, flags, reasoning = detect_scam(
             tc["title"], tc["description"], tc["ngo_name"],
-            tc.get("source", "manual"), tc.get("source_url", "")
+            tc.get("source", "manual"), tc.get("source_url", ""),
+            tc.get("karma", 0)
         )
         icon = "🟢" if status == "verified" else ("🟡" if status == "needs_review" else "🔴")
         print(f"\n{icon} [{score}/100]  {tc['title'][:55]}")
