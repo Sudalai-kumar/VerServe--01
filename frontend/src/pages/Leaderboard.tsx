@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import axios from 'axios'
 import './Leaderboard.css'
 
-const API = import.meta.env.VITE_API_URL ?? 'http://localhost:8000'
+import { API_URL as API } from '../config'
 
 interface LeaderboardEntry {
   rank: number

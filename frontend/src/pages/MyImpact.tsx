@@ -3,7 +3,7 @@ import axios from 'axios'
 import { useAuth } from '../context/AuthContext'
 import './MyImpact.css'
 
-const API = import.meta.env.VITE_API_URL ?? 'http://localhost:8000'
+import { API_URL as API } from '../config'
 
 interface Badge { name: string; icon: string; description: string; earned: boolean }
 interface ImpactData {

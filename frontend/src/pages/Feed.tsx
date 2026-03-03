@@ -4,7 +4,7 @@ import HelpRequestCard from '../components/HelpRequestCard'
 import PostRequestModal from '../components/PostRequestModal'
 import './Feed.css'
 
-const API = import.meta.env.VITE_API_URL ?? 'http://localhost:8000'
+import { API_URL as API } from '../config'
 
 export interface HelpRequest {
   id: number

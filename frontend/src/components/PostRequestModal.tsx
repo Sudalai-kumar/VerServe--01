@@ -2,7 +2,7 @@ import { useState } from 'react'
 import axios from 'axios'
 import './PostRequestModal.css'
 
-const API = import.meta.env.VITE_API_URL ?? 'http://localhost:8000'
+import { API_URL as API } from '../config'
 const CATEGORIES = [
   'General', 
   'Home Helper', 

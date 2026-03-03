@@ -29,7 +29,7 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
 })
 
-const API = import.meta.env.VITE_API_URL ?? 'http://localhost:8000'
+import { API_URL as API } from '../config'
 
 const createIcon = (color: string) =>
   L.divIcon({

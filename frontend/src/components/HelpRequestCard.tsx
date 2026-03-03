@@ -5,7 +5,7 @@ import { Link } from 'react-router-dom'
 import ChatRoom from './ChatRoom'
 import './HelpRequestCard.css'
 
-const API = import.meta.env.VITE_API_URL ?? 'http://localhost:8000'
+import { API_URL as API } from '../config'
 
 interface HelpRequestCardProps {
   req: {

@@ -4,7 +4,7 @@ import axios from 'axios'
 import { useAuth } from '../context/AuthContext'
 import './AuthPage.css'
 
-const API = import.meta.env.VITE_API_URL ?? 'http://localhost:8000'
+import { API_URL as API } from '../config'
 
 export default function AuthPage() {
   const [isLogin, setIsLogin] = useState(true)
