@@ -1,0 +1,10 @@
+# Exclude local environment files so that Docker build-args take precedence
+.env
+.env.local
+.env.development
+.env.development.local
+.env.production.local
+
+# Exclude node_modules and dist to keep build context small
+node_modules
+dist
